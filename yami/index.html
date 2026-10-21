@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yami</title>
+<meta name="google" value="notranslate">
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:0;background:#fff;color:#222}
+*{box-sizing:border-box}
+.ac{text-align:center}
+.ar{text-align:right}
+.fl{float:left}
+.fr{float:right}
+.b{font-weight:bold}
+.small{font-size:0.8em}
+.hand{cursor:pointer}
+.red{color:#e55}
+.green{color:#5c5}
+.blue{color:#55e}
+.grey{color:#999}
+.bg-grey{background:#f0f0f0}
+.bg-green{background:#5c5;color:#fff}
+.bg-gold{background:#fc6}
+.bg-blue{background:#55e;color:#fff}
+.bg-red{background:#e55;color:#fff}
+.line{border-bottom:1px solid #ddd;padding:6px 0}
+.line-s{padding:4px 0}
+.box{border:1px solid #ddd;padding:8px;margin-bottom:8px;border-radius:4px}
+.cell-1,.cell-2,.cell-4,.cell-7,.cell-8,.cell-12{display:inline-block;vertical-align:middle}
+.cell-1{width:calc(25%/3)}
+.cell-2{width:calc(50%/3)}
+.cell-4{width:calc(100%/3)}
+.cell-7{width:calc(175%/3)}
+.cell-8{width:calc(200%/3)}
+.cell-12{width:100%}
+.my-3{margin:12px 0}
+.py-2{padding:8px 0}
+.px-1{padding:0 4px}
+.rc{border-radius:50%;padding:2px 6px}
+.hide{display:none}
+input[type="number"],input[type="text"],textarea{padding:4px;border:1px solid #ccc;border-radius:3px;font-size:14px}
+input[type="submit"],button{border:none;padding:6px 12px;border-radius:3px;cursor:pointer;font-weight:bold;font-size:14px}
+.cal{display:flex;flex-wrap:wrap}
+.cal>div{width:calc(100%/7 - 2.005px);background:#eee;margin:1px;padding:0 1px;text-align:center;min-height:60px;font-size:15px}
+.cal>div.other-month{background:#eed}
+.cal>div>a{text-decoration:none;color:#333;display:block;padding:2px}
+.cal .on{background:#fec}
+.cal a{color:#888}
+.one,.half{display:inline-block;width:12px;height:12px;border-radius:12px;background:#f90;margin:1px}
+.half{border-radius:0 12px 12px 0;width:6px}
+.not-done{background:#ddd}
+.not-done-x{background:#ccc}
+.not-done-x2{background:#999}
+.not-done-x3{background:#666}
+.done-green{background:#5c5}
+.done-red{background:#f90}
+.done-red2{background:#e55}
+.done-red3{background:#a55}
+.weekday{font-weight:bold;background:#ddd!important;min-height:auto!important}
+#form .line-s b{cursor:pointer;user-select:none}
+.toolbar{display:flex;gap:8px;justify-content:center;margin:8px 0}
+.toolbar button{background:#eee;font-weight:normal}
+.month-nav{display:flex;align-items:center;background:#fc6;border-radius:4px 4px 0 0;padding:6px 8px;font-weight:bold;border:1px solid #e0b84a;border-bottom:none}
+.month-nav .side{display:flex;gap:6px}
+.month-nav a{color:#333;text-decoration:none;font-weight:bold;padding:8px 20px;border-radius:3px;transition:background 0.15s}
+.month-nav a:hover{background:rgba(255,255,255,0.5)}
+.month-nav .title{flex:1;text-align:center;font-size:15px}
+.month-nav .title a{text-decoration:underline}
+</style>
+</head>
+<body>
+<div style="max-width:768px;margin:0 auto" id="app"></div>
+
+<!--script src="lunar.js"></script-->
+<script>
+// lunar.js
+class Lunar {
+  static JQ  = ['小寒', '立春', '惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪'];
+  static MON = ['', '正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '臘'];
+  static DAY = ['',
+    '初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
+    '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
+    '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十',
+  ];
+
+  // ---- data table (paste your dates table here) ----
+  static csv = {
+    1928: '201001001011111N6LV59G63b58s62h67H7Hi83R8618L97Nn7GH',
+    1929: '001001001011102A63M4F869V5Ep68e6DA7NV8988Bd92l85R7Lu',
+    1930: '601100100101101U6924Kp6FG5Kb6EQ6Iw85J8Eu8HS98b8BK83o',
+    1931: '011010100101002H6Et52e6L262K6K970f8B58Ki8NH9EQ8H989e',
+    1932: '01110101001010266Kj58T62n58661t66R7Gq82V8528K97Mn7FI',
+    1933: '501101101010011Q62N4E968V5Do67f6CH7Mi88P8Av92384g7LB',
+    1934: '001011010110102E68G4K36EQ5Jh6DU6I184O8E38Ga97i8AQ82u',
+    1935: '00010101101100246E251m6KA61Q6JC6Nf8A58Jl8MO9DZ8GH88i',
+    1936: '310010011011101O6Jk57T61n57660u65U7Fw81h84K8JW7ME7Eg',
+    1937: '010010010111002B61h4DP67i5D166o6BM7Lj87P89x91A83t7KQ',
+    1938: '711001001011011V67V4JE6DX5Im6CZ6H683V8DC8Fm97189m82L',
+    1939: '011001001010102J6DR51A6JQ60b6IL6Mp89I8J38Lg9Cu8Fh88H',
+    1940: '01101010010100286JN57761N56Y60G64i7F880p83T8Ig7LQ7Dv',
+    1941: '611011010010101R6134Cn67A5CO6696Ad7L386j89N90c83O7Jt',
+    1942: '010110101010102F6724Im6D95IN6C66GW82p8CU8F696L89B81k',
+    1943: '00101011010100256Cs50e6Iw60B6Hr6MI88c8II8Kt9CA8Ew87W',
+    1944: '410101010110111P6Id56M60e55r5Nd64A7Ea80I82t8I87Ks7DR',
+    1945: '000100101110102D60Y4CJ66b5Bp65a6A57KQ86588c8Nn82Y7J7',
+    1946: '010010010110102266G4I36CO5Hc6BL6Fm82A8Bp8ER95e88R810',
+    1947: '211001001010111M6C64No6I75NK6H26LV87t8He8KL9Bb8EO86u',
+    1948: '010101001010102A6I055g5Nv5595Mq63K7Dh7NQ8248HK7K67Cb',
+    1949: '710110100101011T5Nf4BM65d5Ap64a6967JV85E87s8NB81x7IX',
+    1950: '001101100101002H65c4HK6BZ5Gi6AO6Ep81D8At8DX94p87h80L',
+    1951: '01011010101010266BU4ND6HQ5MW6G96KW86r8Gb8JI9Aa8DQ862',
+    1952: '501010101101011R6H954q5N754F5Ls62K7Ci7MU81D8GW7JL7Bt',
+    1953: '001001101101002E5N24Aj6525AC63q68G7IY84E86q8MA8107Ha',
+    1954: '010100101101102364j4GU6Am5Fx69c6E080J89x8Cb93v86o7NS',
+    1955: '301010010101111O6AZ4MH6GU5Lc6FH6Jh8658Fo8IV99q8Cj85M',
+    1956: '001010010101102C6GU54B5MO53V5L961Z7Bv7Le80I8FZ7IP7B2',
+    1957: '810101001010101V5MA49s64A59I62w67O7Hm83W86C8LT80K7Gt',
+    1958: '011101001010102I6444Fn6A45FC68n6DC7NX89H8Bw93J86B7Mn',
+    1959: '001101010101002869w4Lg6Fu5L36Ec6J085J8F48Hl9998C284b',
+    1960: '610101101010101S6Fg53N5La52h5KM60m7BC7Kx7Nj8F87I27Ab',
+    1961: '010101011010102F5Lg49M63Y58g62L66k7H682m85T8Ko7Nk7GP',
+    1962: '001001011011002563Y4FH69T5EY6896CV7Mp88X8BF92b85Y7MG',
+    1963: '410100101011101P69Q4L76FH5KI6Dp6IE84b8EP8HB98a8BW84C',
+    1964: '010100101011102D6FM5345LF52I5Jp60B7AW7KG7Mx8EL7HF79r',
+    1965: '00101001001100225L148k63058661f6627GL82484l8KB7N67Fj',
+    1966: '311101001001101L62s4Eb68p5Du67U6Bn7M687m8AW91u84t7Lb',
+    1967: '011011001010102968m4KU6Ef5Ji6DH6Ha83r8DY8GH97f8Ab83H',
+    1968: '701011010101011U6EQ5275KH51K5It5NJ79f7JR7MB8DY7GT798',
+    1969: '001010110101002H5KG47w62A57E60n65B7FV81E83t8JG7MB7Ep',
+    1970: '01001011011010266214Dj67w5D166X6Aq7LA86s89b91183v7Kb',
+    1971: '501001010111011R67j4JP6DY5Ia6C86GS82p8Ce8FU96w89u82Z',
+    1972: '001001010110102F6Df51K5JS50S5I15ML78g7IS7LF8Cf7Fd78I',
+    1973: '01010010011010235JP47461C56D5Nk6467ER80C82x8IR7LR7EA',
+    1974: '411010010011011N61J4D06775C565X69p7KB85v88j90E83H7K4',
+    1975: '011010010010102B67H4Ix6D55I16BR6Fg81x8Bi8EX96289281k',
+    1976: '811010101001011V6Cv50d5Im4Nk5HE5LV77o7Hc7KS8Bw7Ew77e',
+    1977: '010110101010002I5Ip46X60i55j5NG63W7Dl7NU82F8Hh7Kj7DU',
+    1978: '010110110101002760h4CQ66c5Bd65869N7Ja85H8828NU82Y7JK',
+    1979: '610010110110101S66V4IC6CJ5HH6Al6F581O8BA8Dx95U88W81H',
+    1980: '010010101101102G6CS5095IG4NE5Gi5L377N7H87Jr8BJ7EI771',
+    1981: '00100100110110255IC45t6055555MY62q7DB7Mv81h8H97K87Cp',
+    1982: '410100100101111P6024Bj65s5Aq64J68Z7Is84f87V8N28247Im',
+    1983: '010100100101102D65w4Hd6Bl5Gi6AA6EP80h8AT8DK94p87q80X',
+    1984: 'A1011001001011226Be4NI5HO4MM5Fo5K876T7GH7J98Ag7Dj76S',
+    1985: '001101010010102K5HZ45B5NG54D5Lg61x7CI7M480r8GO7JT7CG',
+    1986: '00110110101000295NS4B765C5A663U67i7I083j86Y8M681C7I0',
+    1987: '610101101101001T65D4Gp6Ar5Fi6956DI7Nc89T8CO93x8757Nq',
+    1988: '010101011011002H6B34Mg5Gk4Ld5F15JE75W7FK7IB89i7Cm75Y',
+    1989: '01001010101110265Gj44R5MY53T5Kr6157BJ7L37Nr8FR7IX7BK',
+    1990: '501001001011111R5MX4AE64J59C62Z66k7H082j85b8LD80N7HE',
+    1991: '001001001011102F64S4G86AC5F468Q6Cc7Mq88b8BR9318677Mu',
+    1992: '00110010010110246A84Lm5Fq4Kj5E85IM74e7ER7HI88p7Bv74i',
+    1993: '301101010010101N5Fu43b5Lg52b5K160F7AW7KH7N78Ee7Hj7AX',
+    1994: '011101010010102A5Lm49U63b58V61s6647GJ82484t8KT7NZ7GM',
+    1995: '801101011001011V63Y4FC69G5E867U6Bg7M187p8Am92R85Z7MM',
+    1996: '001011010110002J69V4L75F94K25DQ5He7407Dm7Gg88I7BQ74E',
+    1997: '01010101101100275FO4315L451u5JJ5NW79n7Ja7MS8E57HE7A4',
+    1998: '510010011011011S5LI48u62v57i61365D7FU81J84F8Jt7N87G1',
+    1999: '010010010111002G63H4Ev68v5Di6716B97LO87E8A991m84v7Ll',
+    2000: '01100100101100256904Ke5Eg4JV5Co5Gw73D7D27Fx87c7Am73b',
+    2001: '411010100101011O5En42S5KW51O5Ii5Mr7967Iq7Lk8DP7Ga79S',
+    2002: '011010100101002C5Kh48O62R57I60b64i7Eu80d83V8J97ML7FE',
+    2003: '011011010010102162R4E56845Cq66A6AJ7KZ86O89K91084D7L5',
+    2004: '201011010101011M68I4Ju5Dt4Ih5C25GD72V7CJ7FC86n79w72m',
+    2005: '00101011010100295E241h5Jj50Y5Hq5M178G7I37Ku8CX7Fg78W',
+    2006: '710101010110111T5Jk47R61S56F5NU63a7Dp7Ne82d8IL7LY7EQ',
+    2007: '000100101110102I61e4DI67H5C465K69R7Jf85V88T90B83O7KE',
+    2008: '010010010110102767O4J05Cw4Hj5B35FB71Q7BG7EE85u79A722',
+    2009: '511001001010111Q5DE40n5Il4NX5Go5Kx77D7H17Jv8Be7Eu77q',
+    2010: '010101001010102E5J846l60k55U5Mi62n7D27Mn81i8HQ7Kg7Dc',
+    2011: '010110100101002360s4CW66T5BB64N68R7Ig84X87Y8NJ82Y7JS',
+    2012: '410110101010101N66h4IM5CL4H55AJ5EP70e7AU7DT85B78P71I',
+    2013: '010101101010102A5CX40D5IE4N25GI5KN76Y7GK7JG8Aw7ED778',
+    2014: '901010101101011V5IO46360254k5Lx6237CE7M28118Gl7K67D4',
+    2015: '001001011101002J60K4Bw65t5Ad63q67w7IC84186x8Mg81w7Ir',
+    2016: '01010010110110286684Hk5Bh4GR59f5Dm70379q7Cp84X77l70f',
+    2017: '601010010101111S5Bt3NY5HW4MH5FU5Ja75o7Fd7Ic8AM7Db76W',
+    2018: '001010010101102G5Hm45S5NS54C5LP61T7Bf7LU80T8GE7JV7CP',
+    2019: '01010100100110255Nc4BE65959p6326767HK83C86G8M581O7II',
+    2020: '401110100101011P65T4H35Au4Fc58p5Cw6NE7967C783t77D709',
+    2021: '001101010101002C5BN3Mw5Gr4LY5El5Ip7557Er7Hq89c7Cw75u',
+    2022: '01010110101010215HD44o5Mh53K5KP60P7Ab7KS7NW8FM7Ij7Bk',
+    2023: '201001101101011M5N44Ag64a59C62I66I7GU82M85Q8LF80Z7HW',
+    2024: '001001011011002A64n4GQ5AM4F25895C96MJ7897BB82x76J6NG',
+    2025: '610100101011101T5AW3MA5G74Km5Du5Hu7447Dp7Gp88e7C3754',
+    2026: '010100100111002H5GM4415Lw52d5Jm5Nm79u7Jg7Me8ES7Hp7Aq',
+    2027: '01101001001100265M949k63d58H61O65P7Fa81Q84S8KG7Nc7Gb',
+    2028: '511101001001101Q63s4FU59O4E257B5BF6LT77K7AL82875Q6MO',
+    2029: '011010101001102D59f3LK5FH4Jw5D75H973M7DB7GB87v7BG74D',
+    2030: '00101101010100235FU4385L251e5Ij5Mi78t7Ik7Lq8Di7H87A7',
+    2031: '301101011010101N5LM48v62o57R60Y64Z7Em80g83n8Jg7N57G2',
+    2032: '010010110110102B63F4Em58d4DH56P5AR6Ke76W79b81T74r6Lq',
+    2033: 'B01001010111011V5973Kf5EV4J75CD5GC72O7CF7FJ87D7Ae73i',
+    2034: '001001010110102J5F442e5KV5155I85M678H7I87LD8D67GX79a',
+    2035: '01010010011010285Kt48V62L56r5Ns63o7E07Nr8318Iv7MN7FP',
+    2036: '611010010010111S62g4EJ58B4Cj55m59k6Jv75m78s80m74E6LF',
+    2037: '011010010010102F58X3KB5E54Ih5Bm5Fk71s7Bg7Ej86b7A3736',
+    2038: '01101010100100245EQ4235Js50S5HU5LP77V7HK7KP8CK7Fo78t',
+    2039: '511011010101001O5KG47q61g56F5NH63E7DP7NH82N8IG7Lg7Ei',
+    2040: '010110101101002C6234Dd57U4C45585976JI75978D80473S6KT',
+    2041: '001010110110102157l3JO5DH4Hp5Ar5En70v7Am7Dq85k79C72F',
+    2042: '201001010110111M5DY41C5J54Ne5Gg5Kb76k7Gc7Ji8Bd7F6788',
+    2043: '001001001101102A5JO46w60l55J5ML62H7CR7MK81T8HR7Kt7Du',
+    2044: '710100100101111U61B4Ch56U4B25445836IF74777F7NC72f6Ji',
+    2045: '010100100101102H5713IZ5CO4Gu59w5Du70779w7D484x78T71Y',
+    2046: '01010101001010265Ct40U5IH4Mi5Fd5JV75d7FW7Ig8Af7ED77K',
+    2047: '510110101001011Q5If46H60454V5LR61K7BT7LP80b8Ga7K67DA',
+    2048: '001101101001002E60S4C355r4AO53N57H6HQ73I76R7MP71u6J0',
+    2049: '010101101101002256H3Hq5Bg4GD59B5D26N878v7C484477b70j',
+    2050: '301010101101101N5C73Nh5HV4M25F15Is7517Ep7Hx89x7DW76f',
+    2051: '010010011011102B5I145Z5NL53m5Kk60d7Am7Kf7No8Fn7JL7CR',
+    2052: '80100100101111215Nl4BM55849a52Y56S6Gd72W75f7Ld7196IE',
+    2053: '001001001011102J55Z3HC5B24FX58W5CQ6Ma78T7Bb83Z77570B',
+    2054: '00110010010110285BV3N75Gs4LM5EH5I674D7E67HI89L7Ct762',
+    2055: '601101010010101S5HL44t5Me5375K35Nt7A47K07NE8FI7Ip7Bv',
+    2056: '011101010010102F5NE4Ak54V48x51v55p6G171t7567L870g6Ho',
+    2057: '00110101100100245593Gf5AQ4Ep57j5BZ6Lf77X7Ah82j76M6NX',
+    2058: '410101011011001O5Av3MX5GJ4Kh5DZ5HN73U7DO7Gb88e7CG75Q',
+    2059: '010101010111002C5Gm44N5M752V5JN5NB79I7JB7MP8ET7I47BC',
+    2060: '01001001011100225MX4A753r48I51C5506F670w7497KC6Nm6Gu',
+    2061: '311001001011101L54H3Fq59e4E95755At6L176q7A182375d6Mn',
+    2062: '01100100101100295AB3Lk5FU4Js5Ck5GY72b7CS7Fd87h7BL74X',
+    2063: '711010100101011T5Fu43U5LD51a5IR5MG78O7IJ7LW8Da7HB7AJ',
+    2064: '011010100101002H5Le49E52w47N50H5496EI70D73P7JR6N06G8',
+    2065: '011011010010102553S3F258m4DD56459p6Ju75m79181574f6Lq',
+    2066: '501011010101011Q59E3Km5EX4Iu5Bl5FZ71f7Ba7Eq8707Ac73l',
+    2067: '001010110101002E5F642a5KH50d5HV5LK77S7HO7Kf8Co7GT79d',
+    2068: '01010011011010235Kw48S52846S4NJ5386DG6NA72P7IW6MC6FP',
+    2069: '401010010111011N52l3EK5814CN55D5926JA75578J80Q7466LL',
+    2070: '001010010110102B58k3KL5E14IJ5B45El70p7Aj7E386C79s73A',
+  };
+
+  // ================= public API =================
+  static ymd(input = null) {
+    const ts = Lunar._toTs(input);
+    const [ymdStr, his] = ts.split(' ');
+    const [y, m, d] = ymdStr.split('-').map(Number);
+    let csvStr = Lunar._loadCsv(y);
+    let dObj   = Lunar._csv2dates(csvStr, y);
+    let lunarY = y;
+    const ymdhi = ymdStr + ' ' + his.substring(0, 5);
+    if (ymdhi < dObj.sun[2]) lunarY--;
+    if (ymdStr < dObj.moon[0]) {
+      const dNext = dObj;
+      csvStr = Lunar._loadCsv(y - 1);
+      dObj   = Lunar._csv2dates(csvStr, y - 1);
+      dObj.sun[13] = dNext.sun[1];
+      dObj.sun[14] = dNext.sun[2];
+      dObj.sun[15] = dNext.sun[3];
+    } else {
+      csvStr = Lunar._loadCsv(y + 1);
+      const dNext = Lunar._csv2dates(csvStr, y + 1);
+      dObj.sun[13] = dNext.sun[1];
+      dObj.sun[14] = dNext.sun[2];
+    }
+    const d1 = Lunar._julianDay(dObj.moon[0]); // lunar new year
+    const d2 = Lunar._julianDay(ymdStr);
+    let daysDiff = d2 - d1;
+    let lunarM = 1;
+    let lunarD = 1;
+    let isLeap = 0;
+
+    for (let i = 1; i < 15; i++) {
+      const monthLength = dObj.moon[i];
+      if (daysDiff < monthLength) { lunarD = daysDiff + 1; break; }
+      daysDiff -= monthLength;
+      lunarM++;
+    }
+    if (dObj.moon.leap && lunarM >= dObj.moon.leap + 1) {
+      lunarM--;
+      if (lunarM === dObj.moon.leap) isLeap = 1;
+    }
+
+    let jq = 1;
+    for (const k of Object.keys(dObj.sun)) {
+      if (ymdhi >= dObj.sun[k]) jq = parseInt(k, 10);
+    }
+
+    if (jq > 13) {
+      jq -= 12;
+      csvStr = Lunar._loadCsv(y);
+      const dCur = Lunar._csv2dates(csvStr, y);
+      dObj.moon = dCur.moon;
+      dObj.sun  = dCur.sun;
+      csvStr = Lunar._loadCsv(y + 1);
+      const dNext = Lunar._csv2dates(csvStr, y + 1);
+      dObj.sun[13] = dNext.sun[1];
+      dObj.sun[14] = dNext.sun[2];
+    }
+
+    const data = Object.assign(
+      { m: lunarM, d: lunarD },
+      { isLeap, jq, ts },
+      dObj
+    );
+    return Object.assign(data, Lunar.cn(data));
+  }
+
+  static day(input) {
+    const y = Lunar.ymd(input);
+    const tsDate = y.ts.split(' ')[0];
+    const jqDate = y.sun[y.jq].split(' ')[0];
+    if (tsDate === jqDate) return y.cjq;
+    return y.d === 1 ? y.cm : y.cd;
+  }
+
+  static cn(data) {
+    const cm  = (data.isLeap ? '閏' : '') + Lunar.MON[data.m] + (data.isLeap ? '' : '月');
+    const cd  = Lunar.DAY[data.d];
+    const cjq = Lunar.JQ[((data.jq - 1) % 12 + 12) % 12];
+    return { cm, cd, cjq };
+  }
+
+  // ================= internals =================
+
+  static _pad(x) { return x > 9 ? String(x) : '0' + x; }
+
+  static _base62CharToInt(char) {
+    const ord = char.charCodeAt(0);
+    if (char >= '0' && char <= '9') return ord - 48;
+    if (char >= 'A' && char <= 'Z') return ord - 65 + 10;
+    if (char >= 'a' && char <= 'z') return ord - 97 + 36;
+    throw new Error(`Invalid base62 character: ${char}`);
+  }
+
+  static _csv2dates(str, y) {
+    //if (!str) return {};
+    if (!str) throw new Error(`Lunar._csv2dates: no CSV for year ${y}`);
+    const d = { moon: {}, sun: {} };
+    d.moon.leap = Lunar._base62CharToInt(str[0]);
+    d.moon[0]   = `${y}-${Lunar._pad(Lunar._base62CharToInt(str[14]))}-${Lunar._pad(Lunar._base62CharToInt(str[15]))}`;
+    for (let i = 1; i < 14; i++) {
+      d.moon[i] = 29 + Lunar._base62CharToInt(str[i]);
+    }
+    if (!d.moon.leap) d.moon[13] = 0;
+    const jq = str.substring(16).match(/.{1,3}/g) || [];
+    for (let i = 1; i < 13; i++) {
+      const v = jq[i - 1];
+      d.sun[i] = `${y}-${Lunar._pad(i)}-${Lunar._pad(Lunar._base62CharToInt(v[0]))} ${Lunar._pad(Lunar._base62CharToInt(v[1]))}:${Lunar._pad(Lunar._base62CharToInt(v[2]))}`;
+    }
+    return d;
+  }
+
+  static _julianDay(ymd) {
+    const arr = String(ymd).split('-');
+    let y, m, d;
+    if (arr.length === 4) {
+      y = 1 - parseInt(arr[1], 10);
+      m = parseInt(arr[2], 10);
+      d = parseInt(arr[3], 10);
+    } else {
+      y = parseInt(arr[0], 10);
+      m = parseInt(arr[1], 10);
+      d = parseInt(arr[2], 10);
+    }
+    if (m <= 2) { y -= 1; m += 12; }
+    const A = Math.trunc(y / 100);
+    const B = 2 - A + Math.trunc(A / 4);
+    return Math.trunc(365.25 * (y + 4716)) + Math.trunc(30.6001 * (m + 1)) + d + B - 1524;
+  }
+
+  static _loadCsv(y) {
+    const csv = Lunar.csv;
+    const keys = Object.keys(csv).map(Number);
+    if (!keys.length) throw new Error('Lunar.csv is empty');
+    const min = Math.min(...keys), max = Math.max(...keys);
+
+    if (csv[y] !== undefined) return csv[y];
+
+    // 19-year Metonic fallback
+    for (let step = 19; step <= 190; step += 19) {
+        if (csv[y - step] !== undefined) return csv[y - step];
+        if (csv[y + step] !== undefined) return csv[y + step];
+    }
+    if (y < min) return csv[min];
+    if (y > max) return csv[max];
+    throw new Error(`Lunar: no data for year ${y} (have ${min}–${max})`);
+  }
+
+  static _formatDateTime(dt) {
+    const p = Lunar._pad;
+    return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())} ` +
+      `${p(dt.getHours())}:${p(dt.getMinutes())}:${p(dt.getSeconds())}`;
+  }
+
+  static _toTs(input = null) {
+    if (input === null || input === undefined) {
+      return Lunar._formatDateTime(new Date());
+    }
+    // Accept "2025-12-23 11:22:33" or "2025-12-23_11.22.33"
+    const normalized = decodeURIComponent(String(input))
+      .replace(/_/g, ' ')
+      .replace(/\./g, ':');
+    const parts = normalized.split(' ');
+    const [Y, M, D] = parts[0].split('-').map(Number);
+    let h = 0, i = 0, s = 0;
+    if (parts[1]) {
+      const hms = parts[1].split(':').map(Number);
+      h = hms[0] || 0; i = hms[1] || 0; s = hms[2] || 0;
+    }
+    return Lunar._formatDateTime(new Date(Y, M - 1, D, h, i, s));
+  }
+}
+window.Lunar = Lunar;
+
+// ============ CSV UTILITIES ============
+const CSV_HEADER = 'ymd,yami,bleed,bruise,veg,finger,inr,done,note';
+const STORAGE_KEY = 'YAMI';
+
+// Escape one CSV field (RFC 4180 style)
+function csvEscape(v) {
+  const s = (v === null || v === undefined) ? '' : String(v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+// Parse a CSV string into rows (array of arrays of strings).
+// Handles quoted fields, embedded commas, embedded newlines.
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i+1] === '"') { field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    } else {
+      if (c === '"') { inQuotes = true; i++; continue; }
+      if (c === ',')  { row.push(field); field = ''; i++; continue; }
+      if (c === '\r') { i++; continue; }
+      if (c === '\n') {
+        row.push(field); field = '';
+        rows.push(row); row = [];
+        i++; continue;
+      }
+      field += c; i++; continue;
+    }
+  }
+  // last field / row
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function dataFromCSV(text) {
+  const rows = parseCSV(text);
+  const data = {};
+  for (let r = 0; r < rows.length; r++) {
+    const parts = rows[r];
+    if (parts.length < 2) continue;
+    if (r === 0 && parts[0] === 'ymd') continue; // skip header
+    const [ymd, yami, bleed, bruise, veg, finger, inr, done, ...noteParts] = parts;
+    if (!ymd) continue;
+    data[ymd] = {
+      ymd,
+      yami:   parseInt(yami)     || 0,
+      bleed:  parseInt(bleed) || 0,
+      bruise: parseInt(bruise)   || 0,
+      veg:    parseInt(veg)      || 0,
+      finger: finger || '',
+      inr:    parseInt(inr)      || 0,
+      done:   done || '',
+      note:   noteParts.join(',') || '' // extra commas inside quoted field already collapsed
+    };
+  }
+  return data;
+}
+
+function csvFromData(data) {
+  const lines = [CSV_HEADER];
+  Object.values(data)
+    .sort((a,b) => a.ymd.localeCompare(b.ymd))
+    .forEach(d => {
+      lines.push([
+        csvEscape(d.ymd),
+        csvEscape(d.yami),
+        csvEscape(d.bleed),
+        csvEscape(d.bruise),
+        csvEscape(d.veg),
+        csvEscape(d.finger),
+        csvEscape(d.inr),
+        csvEscape(d.done),
+        csvEscape(d.note || '')
+      ].join(','));
+    });
+  return lines.join('\n');
+}
+
+// ============ DATA LAYER ============
+function loadAllData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return {};
+  return dataFromCSV(raw);
+}
+
+function saveAllData(data) {
+  localStorage.setItem(STORAGE_KEY, csvFromData(data));
+}
+
+function getDayData(data, ymd) {
+  if (!data[ymd]) data[ymd] = { ymd, yami: 0, bleed: 0, bruise: 0, veg: 0, finger: '', inr: 0, done: '', note: '' };
+  return data[ymd];
+}
+
+// ============ DATE UTILITIES ============
+function formatYMD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function parseYMD(ymd){const [y,m,d]=ymd.split('-').map(Number);return new Date(y,m-1,d);}
+function addDays(ymd,n){const d=parseYMD(ymd);d.setDate(d.getDate()+n);return formatYMD(d);}
+function addMonths(ymd,n){const d=parseYMD(ymd);d.setMonth(d.getMonth()+n);return formatYMD(d);}
+function addYears(ymd,n){const d=parseYMD(ymd);d.setFullYear(d.getFullYear()+n);return formatYMD(d);}
+function getMonthDays(ymd){const d=parseYMD(ymd);return new Date(d.getFullYear(),d.getMonth()+1,0).getDate();}
+function getDayOfWeek(ymd){return parseYMD(ymd).getDay();}
+function getMonday(ymd){const dow=getDayOfWeek(ymd);return addDays(ymd,dow===0?-6:1-dow);}
+function getSunday(ymd){const dow=getDayOfWeek(ymd);return addDays(ymd,dow===0?0:7-dow);}
+
+function lunarDay(ymd) { return Lunar.day(ymd + ' 22:59:59'); }
+
+// ============ INR ============
+function calInr(data, ymd) {
+  const dates = Object.keys(data).filter(d => d <= ymd).sort();
+
+  const tests = [];
+  for (let i = dates.length - 1; i >= 0 && tests.length < 2; i--) {
+    if (data[dates[i]].inr) tests.push(dates[i]);
+  }
+  if (tests.length < 2) return { avg: null, predicted: null };
+
+  const [test3, test2] = tests;
+  const INR2 = data[test2].inr / 10;
+  const INR3 = data[test3].inr / 10;
+
+  const i2 = dates.indexOf(test2);
+  const i3 = dates.indexOf(test3);
+  const iy = dates.indexOf(ymd);
+
+  const D = i3 - i2;
+  let T = 0;
+  for (let i = i2; i < i3; i++) T += (data[dates[i]].yami || 0) / 10;
+
+  const avg = (T + INR2 - INR3) / D;
+
+  let predicted = INR3;
+  for (let i = i3; i < iy; i++) predicted += (data[dates[i]].yami || 0) / 10 - avg;
+
+  return { avg, predicted };   // full precision
+}
+
+// ============ RENDER ============
+let currentYmd = '';
+let allData = {};
+
+function render() {
+  const app = document.getElementById('app');
+  let html = renderMonth(currentYmd);
+  html += renderForm(currentYmd);
+  html += renderMonth(addMonths(currentYmd, 1), true);
+  html += '<div class="toolbar">';
+  html +=   '<button type="button" onclick="exportCSV()">Export All</button>';
+  html +=   '<button type="button" onclick="exportMonthCSV()">Export Month</button>';
+  html +=   '<button type="button" onclick="document.getElementById(\'file-input\').click()">Import</button>';
+  html +=   '<input id="file-input" type="file" accept=".csv,text/csv" class="hide" onchange="importCSV(event)">';
+
+  html +=   '<button type="button" onclick="copyMonthCSV()">Copy</button>';
+  html +=   '<button type="button" onclick="uploadPastedCSV()">Paste</button>';
+  html += '</div>';
+  html += '<textarea id="csv-paste" rows="8" class="cell-12" placeholder="Paste CSV data here..."></textarea>';
+  app.innerHTML = html;
+}
+
+function renderForm(ymd) {
+  const day = getDayData(allData, ymd);
+
+  let html = `<form id="form" class="my-3" onsubmit="handleFormSubmit(event)">`;
+  html += `<div class="box bg-gold line-s" style="margin-bottom:0;border:none">`;
+  html += `<b id="f-ymd" class="cell-4">${ymd}</b>`;
+  // Use data-cmd so we can read it via e.submitter
+  html += `<input type="submit" name="cmd" data-cmd="toggle-done" value="${day.done ? 'Taken @ ' + day.done : 'Take Now'}" class="cell-7 ${day.done ? 'bg-grey' : 'bg-green'}">`;
+  html += `<b class="cell-1 ar hand" onclick="document.getElementById('form').classList.add('hide')">×</b>`;
+  html += `</div>`;
+  html += `<div class="box"><div class="line">`;
+
+  // Yami
+  html += `<b class="cell-4">Yami</b><span id="f-yami" class="cell-8 line-s">`;
+  html += `<input type="hidden" name="yami" value="${day.yami}">`;
+  html += `<b class="cell-2" onclick="toggleYami(this)"><b class="half${day.yami % 10 === 5 ? '' : ' not-done'}"></b></b>`;
+  for (let i = 10; i < 60; i += 10) {
+    html += `<b class="cell-2" onclick="toggleYami(this)"><b class="one${day.yami >= i ? '' : ' not-done'}"></b></b>`;
+  }
+  html += `</span>`;
+
+  // Bleed
+  html += `<b class="cell-4">Bleed</b><span id="f-bleed" class="cell-8 line-s">`;
+  html += `<input type="hidden" name="bleed" value="${day.bleed}">`;
+  for (let i = 1; i < 4; i++) html += `<b class="cell-2 ${day.bleed >= i ? 'red' : 'grey'}" onclick="toggleBleed(this, ${i})">&#10082;</b>`;
+  html += `</span>`;
+
+  // Bruise
+  html += `<b class="cell-4">Bruise</b><span id="f-bruise" class="cell-8 line-s">`;
+  html += `<input type="hidden" name="bruise" value="${day.bruise}">`;
+  for (let i = 1; i < 4; i++) html += `<b class="cell-2 ${day.bruise >= i ? 'blue' : 'grey'}" onclick="toggleBruise(this, ${i})">&#8853;</b>`;
+  html += `</span>`;
+
+  // Veg
+  html += `<b class="cell-4">Veg</b><span id="f-veg" class="cell-8 line-s">`;
+  html += `<input type="hidden" name="veg" value="${day.veg}">`;
+  for (let i = 1; i < 4; i++) html += `<b class="cell-2 ${day.veg >= i ? 'green' : 'grey'}" onclick="toggleVeg(this, ${i})">&#9827;</b>`;
+  html += `</span>`;
+
+  // Finger
+  html += `<b class="cell-4">Finger</b><span id="f-finger" class="cell-8 line-s">`;
+  html += `<input type="hidden" name="finger" value="${day.finger}">`;
+  const fingers = ['L2','L3','L4','R2','R3','R4'];
+  const arr = day.finger ? day.finger.split(' ') : [];
+  for (const f of fingers) html += `<b class="cell-2 ${arr.includes(f) ? 'red' : ''}" onclick="toggleFinger(this, '${f}')">${f}</b>`;
+  html += `</span>`;
+
+  // INR
+  html += `<b class="cell-4">INR</b><span class="cell-8 line-s">`;
+  html += `<input type="number" name="inr" value="${(day.inr / 10).toFixed(1)}" class="cell-4" step=".1"> `;
+  html += `<input type="submit" name="cmd" data-cmd="save" class="bg-green cell-4" value="Save">`;
+  html += `</span>`;
+  html += `<textarea name="note" class="cell-12" style="height:80px">${escapeHtml(day.note)}</textarea>`;
+  html += `</div></div></form>`;
+  return html;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderMonth(ymd, isNext = false) {
+  let html = '';
+
+  // ── Month navigation bar ─────────────────────
+  html += `<div class="month-nav">`;
+  html +=   `<span class="side">`;
+  html +=     `<a href="#" onclick="navigate('${addYears(ymd,-1)}');return false" title="Prev year">&#171;</a>`;
+  html +=     `<a href="#" onclick="navigate('${addMonths(ymd,-1)}');return false" title="Prev month">&#8249;</a>`;
+  html +=   `</span>`;
+  html +=   `<span class="title">`;
+  html +=     `<a href="#" onclick="navigate('${formatYMD(new Date())}');return false">${formatMonthYear(ymd)}</a>`;
+  html +=   `</span>`;
+  html +=   `<span class="side">`;
+  html +=     `<a href="#" onclick="navigate('${addMonths(ymd,1)}');return false" title="Next month">&#8250;</a>`;
+  html +=     `<a href="#" onclick="navigate('${addYears(ymd,1)}');return false" title="Next year">&#187;</a>`;
+  html +=   `</span>`;
+  html += `</div>`;
+
+  // ── Calendar grid ────────────────────────────
+  html += `<div class="cal hand">`;
+  for (const d of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']) {
+    html += `<div class="weekday b">${d}</div>`;
+  }
+
+  const today = formatYMD(new Date());
+  const monthStart = ymd.substring(0,7) + '-01';
+  const monthEnd   = ymd.substring(0,7) + '-' + String(getMonthDays(ymd)).padStart(2,'0');
+  let current = getMonday(monthStart);
+  const last  = getSunday(monthEnd);
+
+  while (current <= last) {
+    const isCurrentMonth = current.substring(0,7) === ymd.substring(0,7);
+    const isToday        = current === today;
+    const isSelected     = current === ymd && !isNext;
+
+    html += `<div class="day${isToday ? ' on' : ''}${!isCurrentMonth ? ' grey other-month' : ''}" onclick="navigate('${current}')">`;
+    html +=  `<span${isSelected ? ' class="red"' : ''}>${current.substring(8)}</span>`;
+    html +=  `<br><span class="small grey">${lunarDay(current)}</span>`;
+    html += renderYamiMarkers(current);
+    html += `</div>`;
+
+    current = addDays(current, 1);
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function formatMonthYear(ymd) {
+  const d = parseYMD(ymd);
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function renderYamiMarkers(ymd) {
+  if (!allData[ymd]) return '';
+  const data = allData[ymd];
+  let html = '<br>';
+
+  const isDone = data.done;
+  let statusClass;
+  if (isDone) {
+    statusClass = data.yami > 25 ? ' done-red3' :
+      data.yami === 25 ? ' done-red2' :
+      data.yami === 20 ? ' done-red' : ' done-green';
+  } else {
+    statusClass = data.yami > 25 ? ' not-done-x3' :
+      data.yami === 25 ? ' not-done-x2' :
+      data.yami === 20 ? ' not-done-x' : ' not-done';
+  }
+
+  for (let i = 10; i <= data.yami; i += 10) html += `<b class="one${statusClass}"></b> `;
+  if (data.yami % 10 === 5) html += `<b class="half${statusClass}"></b>`;
+
+  const inrResult = calInr(allData, ymd);
+  if (data.finger) {
+    html += `<br>${data.finger} `;
+    const inr = data.inr / 10;
+    if (inr < 2.5) html += `<i class="green">${inr}</i>`;
+    else if (inr > 3.5) html += `<i class="red">${inr}</i>`;
+    else html += inr;
+    html += `<br><i class="grey small">~<i style="background-color:#998;border-radius:30%;padding:0 5px;color:#eee">${inrResult.avg ? inrResult.avg.toFixed(3) : 0}</i></i>`;
+  } else if (inrResult.predicted !== null) {
+    html += `<br><i class="grey small">${inrResult.predicted.toFixed(2)}</i>`;
+  }
+  html += '<br>';
+  for (let i = 0; i < data.bleed; i++) html += '<b class="red">&#10082;</b> ';
+  for (let i = 0; i < data.bruise; i++) html += '<b>&#8853;</b> ';
+  for (let i = 0; i < data.veg; i++) html += '<b class="green">&#9827;</b> ';
+
+  if (data.note) {
+    const shortNote = data.note.replace(/\n/g, ' ').substring(0,15);
+    html += `<br><i class="small">${escapeHtml(shortNote)}</i>`;
+  }
+  return html;
+}
+
+// ============ EVENTS ============
+function navigate(ymd) { currentYmd = ymd || formatYMD(new Date()); render(); }
+
+function toggleYami(el) {
+  const input = el.parentElement.querySelector('input[name="yami"]');
+  const innerB = el.querySelector('b');
+  let val = parseInt(input.value) || 0;
+
+  if (innerB.classList.contains('half')) {
+    if (val % 10 === 5) input.value = val - 5;
+    else input.value = val + 5;
+  } else {
+    const cells = Array.from(el.parentElement.querySelectorAll(':scope > .cell-2'));
+    const idx = cells.indexOf(el);          // 0=half, 1=10, 2=20...
+    const circleVal = idx * 10;
+    if (val >= circleVal) {
+      input.value = circleVal - 10;
+      if (val % 10 === 5) input.value = circleVal - 5;
+    } else input.value = circleVal;
+  }
+  updateYamiDisplay(el.parentElement);
+}
+
+function updateYamiDisplay(container) {
+  const val = parseInt(container.querySelector('input[name="yami"]').value) || 0;
+  const cells = Array.from(container.querySelectorAll(':scope > .cell-2'));
+  const halfB = cells[0].querySelector('b');
+  if (val % 10 === 5) halfB.classList.remove('not-done');
+  else halfB.classList.add('not-done');
+  for (let i = 1; i < cells.length; i++) {
+    const b = cells[i].querySelector('b');
+    if (val >= i * 10) b.classList.remove('not-done');
+    else b.classList.add('not-done');
+  }
+}
+
+function toggleBleed(el, level) {
+  const input = el.parentElement.querySelector('input[name="bleed"]');
+  input.value = (parseInt(input.value) || 0) >= level ? level - 1 : level;
+  updateBleedDisplay(el.parentElement);
+}
+function updateBleedDisplay(container) {
+  const val = parseInt(container.querySelector('input[name="bleed"]').value) || 0;
+  container.querySelectorAll(':scope > .cell-2').forEach((item, i) => {
+    item.className = 'cell-2 ' + (i < val ? 'red' : 'grey');
+  });
+}
+
+function toggleBruise(el, level) {
+  const input = el.parentElement.querySelector('input[name="bruise"]');
+  input.value = (parseInt(input.value) || 0) >= level ? level - 1 : level;
+  updateBruiseDisplay(el.parentElement);
+}
+function updateBruiseDisplay(container) {
+  const val = parseInt(container.querySelector('input[name="bruise"]').value) || 0;
+  container.querySelectorAll(':scope > .cell-2').forEach((item, i) => {
+    item.className = 'cell-2 ' + (i < val ? 'blue' : 'grey');
+  });
+}
+
+function toggleVeg(el, level) {
+  const input = el.parentElement.querySelector('input[name="veg"]');
+  input.value = (parseInt(input.value) || 0) >= level ? level - 1 : level;
+  updateVegDisplay(el.parentElement);
+}
+function updateVegDisplay(container) {
+  const val = parseInt(container.querySelector('input[name="veg"]').value) || 0;
+  container.querySelectorAll(':scope > .cell-2').forEach((item, i) => {
+    item.className = 'cell-2 ' + (i < val ? 'green' : 'grey');
+  });
+}
+
+function toggleFinger(el, finger) {
+  const input = el.parentElement.querySelector('input[name="finger"]');
+  const arr = input.value ? input.value.split(' ') : [];
+  const idx = arr.indexOf(finger);
+  if (idx >= 0) { arr.splice(idx, 1); el.classList.remove('red'); }
+  else { arr.push(finger); el.classList.add('red'); }
+  input.value = arr.join(' ');
+}
+
+// ============ FORM SUBMIT ============
+function handleFormSubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  const fd = new FormData(form);
+  const day = getDayData(allData, currentYmd);
+
+  // Which button was clicked?
+  const clicked = e.submitter;
+  const action = clicked ? clicked.dataset.cmd : 'save';
+
+  // Always capture whatever is currently in the form
+  day.yami   = parseInt(fd.get('yami')) || 0;
+  day.bleed  = parseInt(fd.get('bleed')) || 0;
+  day.bruise = parseInt(fd.get('bruise')) || 0;
+  day.veg    = parseInt(fd.get('veg')) || 0;
+  day.finger = fd.get('finger') || '';
+  day.inr    = Math.round((parseFloat(fd.get('inr')) || 0) * 10);
+  day.note   = fd.get('note') || '';
+
+  if (action === 'toggle-done') {
+    if (day.done) day.done = ''; // undo
+    else {
+      const now = new Date();
+      day.done = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    }
+  }
+  saveAllData(allData);
+  render();
+}
+
+// ============ IMPORT / EXPORT ============
+function exportCSV() {
+  const csv = localStorage.getItem(STORAGE_KEY) || CSV_HEADER;
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'yami_' + formatYMD(new Date()) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportMonthCSV() {
+  const month = currentYmd.substring(0, 7);
+  const csv = monthCSV(month);
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'yami_' + month + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      importCSVText(e.target.result);
+    } catch (err) {
+      alert('Could not import CSV. Please check the file format.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function monthCSV(month) {
+  const rows = [CSV_HEADER];
+  Object.values(allData)
+    .filter(d => d.ymd.substring(0, 7) === month)
+    .sort((a, b) => a.ymd.localeCompare(b.ymd))
+    .forEach(d => {
+      rows.push([
+        csvEscape(d.ymd),
+        csvEscape(d.yami),
+        csvEscape(d.bleed),
+        csvEscape(d.bruise),
+        csvEscape(d.veg),
+        csvEscape(d.finger),
+        csvEscape(d.inr),
+        csvEscape(d.done),
+        csvEscape(d.note || '')
+      ].join(','));
+    });
+  return rows.join('\n');
+}
+
+async function copyMonthCSV() {
+  const month = currentYmd.substring(0, 7);
+  try {
+    await navigator.clipboard.writeText(monthCSV(month));
+    alert('Copied ' + month + ' data to clipboard.');
+  } catch (err) {
+    const textarea = document.getElementById('csv-paste');
+    textarea.value = monthCSV(month);
+    textarea.focus();
+    textarea.select();
+    alert('Clipboard unavailable. CSV placed in the textarea; please copy it manually.');
+  }
+}
+
+function importCSVText(text) {
+  const imported = dataFromCSV(text);
+  let added = 0, updated = 0;
+  for (const ymd in imported) {
+    if (allData[ymd]) updated++;
+    else added++;
+    allData[ymd] = imported[ymd];
+  }
+  saveAllData(allData);
+  render();
+  alert('Imported: ' + added + ' new, ' + updated + ' updated.');
+}
+
+function uploadPastedCSV() {
+  const textarea = document.getElementById('csv-paste');
+  const text = textarea.value.trim();
+  if (!text) {
+    alert('Please paste CSV data first.');
+    return;
+  }
+  try {
+    importCSVText(text);
+  } catch (err) {
+    alert('Could not import CSV. Please check the pasted data.');
+  }
+}
+// ============ INIT ============
+allData = loadAllData();
+currentYmd = formatYMD(new Date());
+render();
+</script>
+</body>
+</html>
